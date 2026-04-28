@@ -33,12 +33,14 @@ export default function Navbar() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const isAdmin           = userEmail === adminEmail
-  const isApprovedPatient = !isAdmin && patient?.approved === true && patient.account_type === 'patient'
+  const isAdmin             = userEmail === adminEmail
+  const isApprovedPatient   = !isAdmin && patient?.approved === true && patient.account_type === 'patient'
+  const isApprovedWholesale = !isAdmin && patient?.approved === true && patient.account_type === 'wholesale'
 
   const NAV_LINKS = [
     ...BASE_NAV,
-    ...(isAdmin || isApprovedPatient ? [{ to: '/menu', label: 'Patient Menu' }] : []),
+    ...(isAdmin || isApprovedPatient   ? [{ to: '/menu',      label: 'Patient Menu' }] : []),
+    ...(isAdmin || isApprovedWholesale ? [{ to: '/wholesale',  label: 'Wholesale'    }] : []),
   ]
 
   async function handleSignOut() {

@@ -26,6 +26,32 @@ function wrap(body: string) {
   `
 }
 
+export function emailPriceInquiry(
+  buyerName: string,
+  buyerEmail: string,
+  productName: string,
+  productUnit: string,
+) {
+  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
+  return sendEmail(
+    adminEmail,
+    `Price inquiry — ${productName}`,
+    wrap(`
+      <h2 style="margin-top:0;color:#2C3B2D">Wholesale Price Inquiry</h2>
+      <p>A wholesale buyer is interested in pricing for the following product:</p>
+      <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:16px 0">
+        <p style="margin:0 0 4px"><strong>${productName}</strong> / ${productUnit}</p>
+      </div>
+      <h3 style="color:#2C3B2D;margin-bottom:4px">Buyer</h3>
+      <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:8px 0">
+        <p style="margin:0 0 4px"><strong>${buyerName}</strong></p>
+        <p style="margin:0;color:#666;font-size:14px">${buyerEmail}</p>
+      </div>
+      <p style="color:#888;font-size:13px;margin-top:16px">Reply directly to this email to follow up.</p>
+    `)
+  )
+}
+
 export function emailNewAccountAlert(name: string, email: string, accountType: 'patient' | 'wholesale') {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
   return sendEmail(

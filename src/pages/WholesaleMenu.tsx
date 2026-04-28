@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { emailPriceInquiry } from '../lib/email'
 import type { Product, ProductCategory } from '../types'
 
 const CATEGORIES: ProductCategory[] = ['Flower', 'Hash Rosin', 'Edible (Solid)', 'Cartridge']
-
 type CategoryFilter = ProductCategory | 'All'
 
 export default function WholesaleMenu() {
@@ -13,6 +13,10 @@ export default function WholesaleMenu() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All')
+  const [buyerName, setBuyerName] = useState('')
+  const [buyerEmail, setBuyerEmail] = useState('')
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set())
+  const [sendingId, setSendingId] = useState<string | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -22,23 +26,37 @@ export default function WholesaleMenu() {
       const isAdmin = user.email === import.meta.env.VITE_ADMIN_EMAIL
       if (!isAdmin) {
         const { data: patient } = await supabase
-          .from('patients').select('approved, account_type').eq('id', user.id).maybeSingle()
+          .from('patients').select('approved, account_type, full_name, email').eq('id', user.id).maybeSingle()
         if (!patient?.approved) { navigate('/pending-approval'); return }
         if (patient.account_type !== 'wholesale') { navigate('/menu'); return }
+        setBuyerName(patient.full_name)
+        setBuyerEmail(patient.email)
+      } else {
+        setBuyerName('Admin')
+        setBuyerEmail(user.email ?? '')
       }
 
       const { data, error } = await supabase
-        .from('products').select('*').eq('active', true).order('quantity', { ascending: false })
+        .from('products').select('*').eq('active', true).eq('availability', 'wholesale')
+        .order('category').order('name')
 
-      if (error) setError('Unable to load menu right now. Please try again.')
+      if (error) setError('Unable to load products right now. Please try again.')
       else setProducts(data as Product[])
       setLoading(false)
     }
     init()
   }, [navigate])
 
-  const visible  = products.filter((p) => p.availability !== 'patient')
-  const filtered = activeCategory === 'All' ? visible : visible.filter((p) => p.category === activeCategory)
+  async function sendInquiry(product: Product) {
+    setSendingId(product.id)
+    await emailPriceInquiry(buyerName, buyerEmail, product.name, product.unit)
+    setSentIds((prev) => new Set(prev).add(product.id))
+    setSendingId(null)
+  }
+
+  const filtered = activeCategory === 'All'
+    ? products
+    : products.filter((p) => p.category === activeCategory)
 
   if (loading && !error) return <div className="min-h-[80vh]" />
 
@@ -46,19 +64,15 @@ export default function WholesaleMenu() {
     <div>
       <section
         className="relative py-20 px-4 flex items-center justify-center text-center overflow-hidden"
-        style={{
-          backgroundImage: `url('/hero-bg.webp')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-        }}
+        style={{ backgroundImage: `url('/hero-bg.webp')`, backgroundSize: 'cover', backgroundPosition: 'center 30%' }}
       >
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 max-w-2xl mx-auto">
           <h1 className="text-white text-4xl md:text-6xl font-extrabold font-heading mb-4 leading-tight drop-shadow-lg">
-            Wholesale Menu
+            Wholesale
           </h1>
           <p className="text-white/55 text-base md:text-lg max-w-lg mx-auto">
-            Wholesale pricing. All sales are cash only. Prices shown are per unit as listed.
+            Request current pricing on any product below and Mike will follow up directly.
           </p>
         </div>
       </section>
@@ -67,54 +81,62 @@ export default function WholesaleMenu() {
       </svg>
 
       <section className="py-10 px-4" style={{ background: '#EEEBE8' }}>
-      <div className="max-w-5xl mx-auto">
-        <div className="flex flex-wrap gap-2 mb-8">
-          {(['All', ...CATEGORIES] as CategoryFilter[]).map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === cat
-                  ? 'bg-brand-accent text-white'
-                  : 'bg-brand-light text-brand-text/70 hover:text-brand-text'
-              }`}>
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {error && <div className="text-center py-16 text-red-500 text-sm">{error}</div>}
-
-        {!error && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((product) => (
-              <WholesaleCard key={product.id} product={product} />
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-wrap gap-2 mb-8">
+            {(['All', ...CATEGORIES] as CategoryFilter[]).map((cat) => (
+              <button key={cat} onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-brand-accent text-white'
+                    : 'bg-brand-light text-brand-text/70 hover:text-brand-text'
+                }`}>
+                {cat}
+              </button>
             ))}
-            {filtered.length === 0 && (
-              <p className="text-brand-text/40 col-span-full text-center py-16 text-sm">
-                No products available in this category right now.
-              </p>
-            )}
           </div>
-        )}
-      </div>
+
+          {error && <div className="text-center py-16 text-red-500 text-sm">{error}</div>}
+
+          {!error && (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((product) => (
+                <WholesaleCard
+                  key={product.id}
+                  product={product}
+                  sent={sentIds.has(product.id)}
+                  sending={sendingId === product.id}
+                  onInquire={() => sendInquiry(product)}
+                />
+              ))}
+              {filtered.length === 0 && (
+                <p className="text-brand-text/40 col-span-full text-center py-16 text-sm">
+                  No products available in this category right now.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   )
 }
 
-function WholesaleCard({ product }: { product: Product }) {
+function WholesaleCard({
+  product, sent, sending, onInquire,
+}: {
+  product: Product
+  sent: boolean
+  sending: boolean
+  onInquire: () => void
+}) {
   const soldOut = product.quantity === 0
-  const displayPrice = product.wholesale_price ?? product.price
 
   return (
-    <div className="rounded-xl border border-brand-light bg-white hover:border-brand-accent/40 hover:shadow-md flex flex-col gap-3 transition-all overflow-hidden">
+    <div className="rounded-xl border border-brand-light bg-white hover:border-brand-accent/40 hover:shadow-md flex flex-col transition-all overflow-hidden">
       {product.image_url && (
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-full h-44 object-cover"
-        />
+        <img src={product.image_url} alt={product.name} className="w-full h-44 object-cover" />
       )}
-      <div className="flex items-start justify-between gap-2 px-5 pt-3">
+      <div className="flex items-start justify-between gap-2 px-5 pt-4">
         <div>
           <span className="text-brand-accent text-xs font-medium">{product.category}</span>
           <h3 className="font-semibold font-heading text-sm mt-0.5 leading-snug">{product.name}</h3>
@@ -126,19 +148,26 @@ function WholesaleCard({ product }: { product: Product }) {
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-brand-text/50 px-5">
+      <div className="flex items-center gap-3 text-xs text-brand-text/50 px-5 mt-2">
         {product.thc_pct != null && <span>THC {product.thc_pct}%</span>}
         {product.cbd_pct != null && <span>CBD {product.cbd_pct}%</span>}
-        <span className="font-medium text-brand-text/70">${displayPrice} / {product.unit}</span>
+        <span>{product.unit}</span>
       </div>
 
-      <div className="px-5 pb-5 mt-auto">
-        <Link
-          to={`/reservations/new?product=${product.id}`}
-          className="block text-center bg-brand-primary hover:bg-brand-accent text-brand-darker text-sm font-semibold py-2 rounded-full transition-colors"
-        >
-          {soldOut ? 'Join Waitlist' : 'Reserve'}
-        </Link>
+      <div className="px-5 pb-5 mt-auto pt-4">
+        {sent ? (
+          <div className="text-center text-sm text-green-700 font-medium py-2 bg-green-50 rounded-full">
+            Inquiry sent ✓
+          </div>
+        ) : (
+          <button
+            onClick={onInquire}
+            disabled={sending}
+            className="w-full text-center bg-brand-primary hover:bg-brand-accent text-brand-darker text-sm font-semibold py-2 rounded-full transition-colors disabled:opacity-50"
+          >
+            {sending ? 'Sending…' : 'Price Inquiry'}
+          </button>
+        )}
       </div>
     </div>
   )
