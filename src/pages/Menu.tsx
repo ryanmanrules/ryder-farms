@@ -28,9 +28,7 @@ export default function Menu() {
       }
 
       const { data, error } = await supabase
-        .from('product_availability')
-        .select('id, name, category, strain, thc_pct, cbd_pct, price, unit, quantity, max_per_order, active, availability, image_url, available_qty, confirmed_qty, waitlist_count')
-        .eq('active', true).order('quantity', { ascending: false })
+        .from('product_availability').select('*').eq('active', true).order('quantity', { ascending: false })
 
       if (error) setError('Unable to load menu right now. Please try again.')
       else setProducts(data as Product[])
