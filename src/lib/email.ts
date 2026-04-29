@@ -1,5 +1,14 @@
 import { supabase } from './supabase'
 
+function esc(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   try {
     await supabase.functions.invoke('send-email', {
@@ -35,17 +44,17 @@ export function emailPriceInquiry(
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
   return sendEmail(
     adminEmail,
-    `Price inquiry — ${productName}`,
+    `Price inquiry — ${esc(productName)}`,
     wrap(`
       <h2 style="margin-top:0;color:#2C3B2D">Wholesale Price Inquiry</h2>
       <p>A wholesale buyer is interested in pricing for the following product:</p>
       <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:16px 0">
-        <p style="margin:0 0 4px"><strong>${productName}</strong> / ${productUnit}</p>
+        <p style="margin:0 0 4px"><strong>${esc(productName)}</strong> / ${esc(productUnit)}</p>
       </div>
       <h3 style="color:#2C3B2D;margin-bottom:4px">Buyer</h3>
       <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:8px 0">
-        <p style="margin:0 0 4px"><strong>${buyerName}</strong></p>
-        <p style="margin:0;color:#666;font-size:14px">${buyerEmail}</p>
+        <p style="margin:0 0 4px"><strong>${esc(buyerName)}</strong></p>
+        <p style="margin:0;color:#666;font-size:14px">${esc(buyerEmail)}</p>
       </div>
       <p style="color:#888;font-size:13px;margin-top:16px">Reply directly to this email to follow up.</p>
     `)
@@ -59,10 +68,10 @@ export function emailNewAccountAlert(name: string, email: string, accountType: '
     `New ${accountType} account — ${name}`,
     wrap(`
       <h2 style="margin-top:0;color:#2C3B2D">New account pending approval</h2>
-      <p>A new <strong>${accountType}</strong> account has been created and needs your review.</p>
+      <p>A new <strong>${esc(accountType)}</strong> account has been created and needs your review.</p>
       <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:16px 0">
-        <p style="margin:0 0 4px"><strong>${name}</strong></p>
-        <p style="margin:0;color:#666;font-size:14px">${email}</p>
+        <p style="margin:0 0 4px"><strong>${esc(name)}</strong></p>
+        <p style="margin:0;color:#666;font-size:14px">${esc(email)}</p>
       </div>
       <a href="https://ryderfarmsmaine.com/admin/accounts"
         style="display:inline-block;background:#A8C5A0;color:#2C3B2D;font-weight:600;
@@ -79,7 +88,7 @@ export function emailAccountApproved(to: string, name: string) {
     'Your Ryder Farms account is approved',
     wrap(`
       <h2 style="margin-top:0;color:#2C3B2D">You're approved! 🌿</h2>
-      <p>Hi ${name},</p>
+      <p>Hi ${esc(name)},</p>
       <p>Your Ryder Farms account has been approved. You can now browse the menu and place reservations.</p>
       <a href="https://ryderfarmsmaine.com/menu"
         style="display:inline-block;background:#A8C5A0;color:#2C3B2D;font-weight:600;
@@ -107,10 +116,10 @@ export function emailReservationConfirmed(
     `Reservation confirmed — ${productName}`,
     wrap(`
       <h2 style="margin-top:0;color:#2C3B2D">Reservation confirmed</h2>
-      <p>Hi ${name}, your reservation is locked in.</p>
+      <p>Hi ${esc(name)}, your reservation is locked in.</p>
       <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:16px 0">
-        <p style="margin:0 0 6px"><strong>${productName}</strong></p>
-        <p style="margin:0 0 4px;color:#666;font-size:14px">Qty: ${quantity} ${unit}</p>
+        <p style="margin:0 0 6px"><strong>${esc(productName)}</strong></p>
+        <p style="margin:0 0 4px;color:#666;font-size:14px">Qty: ${quantity} ${esc(unit)}</p>
         <p style="margin:0;font-size:18px;font-weight:700;color:#2C3B2D">$${total} cash due at pickup</p>
       </div>
       <p style="color:#888;font-size:13px">
@@ -132,8 +141,8 @@ export function emailWaitlisted(
     `Waitlist confirmed — ${productName}`,
     wrap(`
       <h2 style="margin-top:0;color:#2C3B2D">You're on the waitlist</h2>
-      <p>Hi ${name},</p>
-      <p>You've been added to the waitlist for <strong>${productName}</strong> (qty: ${quantity}).</p>
+      <p>Hi ${esc(name)},</p>
+      <p>You've been added to the waitlist for <strong>${esc(productName)}</strong> (qty: ${quantity}).</p>
       <p>If a reservation above you is cancelled or new stock arrives, yours will be automatically confirmed
          and you'll get an email right away.</p>
       <p style="color:#888;font-size:13px">No action needed — we'll be in touch.</p>
@@ -154,10 +163,10 @@ export function emailPromotedFromWaitlist(
     `Good news — you're confirmed for ${productName}`,
     wrap(`
       <h2 style="margin-top:0;color:#2C3B2D">You're off the waitlist! 🎉</h2>
-      <p>Hi ${name},</p>
-      <p>A spot opened up and your waitlist reservation for <strong>${productName}</strong> has been confirmed.</p>
+      <p>Hi ${esc(name)},</p>
+      <p>A spot opened up and your waitlist reservation for <strong>${esc(productName)}</strong> has been confirmed.</p>
       <div style="background:#F5F3F0;border-radius:8px;padding:16px;margin:16px 0">
-        <p style="margin:0 0 4px;color:#666;font-size:14px">Qty: ${quantity} ${unit}</p>
+        <p style="margin:0 0 4px;color:#666;font-size:14px">Qty: ${quantity} ${esc(unit)}</p>
         <p style="margin:0;font-size:18px;font-weight:700;color:#2C3B2D">$${total} cash due at pickup</p>
       </div>
       <p style="color:#888;font-size:13px">

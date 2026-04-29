@@ -35,7 +35,8 @@ export default function Login() {
 
     const isAdmin = data.user?.email === import.meta.env.VITE_ADMIN_EMAIL
     const next = searchParams.get('next')
-    navigate(isAdmin ? '/admin' : (next || '/menu'))
+    const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/menu'
+    navigate(isAdmin ? '/admin' : safeNext)
   }
 
   return (

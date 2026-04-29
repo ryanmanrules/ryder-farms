@@ -213,9 +213,11 @@ export default function ReserveProduct() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
+              maxLength={500}
               placeholder="Preferred pickup time, questions, etc."
               className="w-full border border-brand-light rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand-accent resize-none"
             />
+            <p className="text-xs text-brand-text/30 text-right mt-0.5">{notes.length}/500</p>
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
