@@ -67,14 +67,15 @@ export default function AdminReservations() {
     const fulfillError = results.find((res) => res.error)?.error
     if (fulfillError) {
       alert(`Fulfill failed: ${fulfillError.message}`)
-    } else {
-      await logAdminAction('fulfill_reservation', 'reservation', r.id, {
-        patient: r.patient?.full_name,
-        product: r.product.name,
-        quantity: r.quantity,
-        total,
-      })
     }
+
+    await logAdminAction('fulfill_reservation', 'reservation', r.id, {
+      patient: r.patient?.full_name,
+      product: r.product.name,
+      quantity: r.quantity,
+      total,
+      error: fulfillError?.message ?? null,
+    })
 
     setActing(null)
     load(tab)
