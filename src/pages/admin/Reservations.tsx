@@ -28,6 +28,7 @@ export default function AdminReservations() {
   useEffect(() => { load(tab) }, [tab])
 
   async function fulfill(r: Reservation) {
+    console.log('[fulfill] called for reservation', r.id)
     if (!r.product) return
     setActing(r.id)
 
