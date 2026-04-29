@@ -28,7 +28,6 @@ export default function AdminReservations() {
   useEffect(() => { load(tab) }, [tab])
 
   async function fulfill(r: Reservation) {
-    console.log('[fulfill] called for reservation', r.id)
     if (!r.product) return
     setActing(r.id)
 
@@ -70,7 +69,6 @@ export default function AdminReservations() {
       alert(`Fulfill failed: ${fulfillError.message}`)
     }
 
-    console.log('[audit] about to log fulfill for reservation', r.id)
     await logAdminAction('fulfill_reservation', 'reservation', r.id, {
       patient: r.patient?.full_name,
       product: r.product.name,
