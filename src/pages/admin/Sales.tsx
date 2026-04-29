@@ -25,8 +25,15 @@ function exportCSV(sales: Sale[]) {
     Math.round(Number(s.total)),
   ])
 
+  const sanitize = (cell: unknown) => {
+    const s = String(cell ?? '')
+    // Prefix formula injection characters to prevent Excel/Sheets execution
+    const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+    return `"${safe.replace(/"/g, '""')}"`
+  }
+
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${cell}"`).join(','))
+    .map((row) => row.map(sanitize).join(','))
     .join('\n')
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
