@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { calcTax } from '../../lib/tax'
 import { emailPromotedFromWaitlist } from '../../lib/email'
+import { logAdminAction } from '../../lib/audit'
 import type { Reservation } from '../../types'
 
 type Tab = 'pending' | 'waitlisted' | 'fulfilled' | 'cancelled'
@@ -34,7 +35,7 @@ export default function AdminReservations() {
     const { taxRate, taxAmount: taxCollected, total } =
       calcTax(r.product.price, r.quantity, isWholesale)
 
-    await Promise.all([
+    const results = await Promise.all([
       supabase.from('reservations').update({
         status: 'fulfilled',
         fulfilled_at: new Date().toISOString(),
@@ -63,13 +64,31 @@ export default function AdminReservations() {
       }),
     ])
 
+    const fulfillError = results.find((res) => res.error)?.error
+    if (fulfillError) {
+      alert(`Fulfill failed: ${fulfillError.message}`)
+    } else {
+      await logAdminAction('fulfill_reservation', 'reservation', r.id, {
+        patient: r.patient?.full_name,
+        product: r.product.name,
+        quantity: r.quantity,
+        total,
+      })
+    }
+
     setActing(null)
     load(tab)
   }
 
   async function cancel(r: Reservation) {
     setActing(r.id)
-    await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', r.id)
+    const { error: cancelError } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', r.id)
+    if (cancelError) { alert(`Failed to cancel: ${cancelError.message}`); setActing(null); return }
+    await logAdminAction('cancel_reservation', 'reservation', r.id, {
+      patient: r.patient?.full_name,
+      product: r.product?.name,
+      status: r.status,
+    })
 
     // If a confirmed reservation is cancelled, promote the next waitlisted one
     if (r.status === 'pending') {

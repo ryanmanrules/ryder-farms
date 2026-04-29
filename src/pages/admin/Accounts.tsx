@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { emailAccountApproved } from '../../lib/email'
+import { logAdminAction } from '../../lib/audit'
 import type { Patient } from '../../types'
 
 function CertCardLinks({ paths }: { paths: string[] }) {
@@ -63,16 +64,29 @@ export default function AdminAccounts() {
 
   async function approve(id: string) {
     setWorking(id)
-    await supabase.from('patients').update({ approved: true }).eq('id', id)
+    const { error } = await supabase.from('patients').update({ approved: true }).eq('id', id)
+    if (error) { alert(`Failed to approve account: ${error.message}`); setWorking(null); return }
     const patient = patients.find((p) => p.id === id)
-    if (patient) emailAccountApproved(patient.email, patient.full_name)
+    if (patient) {
+      emailAccountApproved(patient.email, patient.full_name)
+      await logAdminAction('approve_account', 'patient', id, {
+        name: patient.full_name, email: patient.email, account_type: patient.account_type,
+      })
+    }
     setWorking(null)
     load()
   }
 
   async function reject(id: string) {
     setWorking(id)
-    await supabase.from('patients').update({ rejected: true }).eq('id', id)
+    const { error } = await supabase.from('patients').update({ rejected: true }).eq('id', id)
+    if (error) { alert(`Failed to reject account: ${error.message}`); setWorking(null); return }
+    const patient = patients.find((p) => p.id === id)
+    if (patient) {
+      await logAdminAction('reject_account', 'patient', id, {
+        name: patient.full_name, email: patient.email, account_type: patient.account_type,
+      })
+    }
     setWorking(null)
     load()
   }
@@ -80,14 +94,23 @@ export default function AdminAccounts() {
   async function deletePatient(id: string, name: string) {
     if (!confirm(`Permanently delete ${name}'s account? This cannot be undone.`)) return
     setWorking(id)
-    await supabase.rpc('delete_patient_and_auth', { user_id: id })
+    await logAdminAction('delete_account', 'patient', id, { name })
+    const { error } = await supabase.rpc('delete_patient_and_auth', { user_id: id })
+    if (error) { alert(`Failed to delete account: ${error.message}`); setWorking(null); return }
     setWorking(null)
     load()
   }
 
   async function revoke(id: string) {
     setWorking(id)
-    await supabase.from('patients').update({ approved: false }).eq('id', id)
+    const { error } = await supabase.from('patients').update({ approved: false }).eq('id', id)
+    if (error) { alert(`Failed to revoke account: ${error.message}`); setWorking(null); return }
+    const patient = patients.find((p) => p.id === id)
+    if (patient) {
+      await logAdminAction('revoke_account', 'patient', id, {
+        name: patient.full_name, email: patient.email,
+      })
+    }
     setWorking(null)
     load()
   }
