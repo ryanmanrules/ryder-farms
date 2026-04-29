@@ -150,6 +150,27 @@ export function emailWaitlisted(
   )
 }
 
+export function emailRestockNotification(to: string, name: string) {
+  return sendEmail(
+    to,
+    'New wholesale inventory available — Ryder Farms',
+    wrap(`
+      <h2 style="margin-top:0;color:#2C3B2D">New inventory is available 🌿</h2>
+      <p>Hi ${esc(name)},</p>
+      <p>You signed up to be notified when new wholesale inventory is available at Ryder Farms.
+         New product is ready — visit the wholesale page to request pricing.</p>
+      <a href="https://ryderfarmsmaine.com/wholesale"
+        style="display:inline-block;background:#A8C5A0;color:#2C3B2D;font-weight:600;
+               padding:12px 24px;border-radius:999px;text-decoration:none;margin-top:8px">
+        View wholesale menu →
+      </a>
+      <p style="color:#888;font-size:13px;margin-top:24px">
+        You received this because you requested a restock notification.
+      </p>
+    `)
+  )
+}
+
 export function emailPromotedFromWaitlist(
   to: string,
   name: string,

@@ -19,6 +19,7 @@ import AdminReservations from './pages/admin/Reservations'
 import AdminInventory from './pages/admin/Inventory'
 import AdminSales from './pages/admin/Sales'
 import AdminAccounts from './pages/admin/Accounts'
+import AdminSettings from './pages/admin/Settings'
 import Privacy from './pages/Privacy'
 import Services from './pages/Services'
 
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/admin/accounts"         element={<AdminAccounts />} />
           <Route path="/admin/inventory"        element={<AdminInventory />} />
           <Route path="/admin/sales"            element={<AdminSales />} />
+          <Route path="/admin/settings"         element={<AdminSettings />} />
         </Route>
       </Routes>
     </BrowserRouter>
