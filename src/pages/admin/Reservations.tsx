@@ -69,6 +69,7 @@ export default function AdminReservations() {
       alert(`Fulfill failed: ${fulfillError.message}`)
     }
 
+    console.log('[audit] about to log fulfill for reservation', r.id)
     await logAdminAction('fulfill_reservation', 'reservation', r.id, {
       patient: r.patient?.full_name,
       product: r.product.name,
