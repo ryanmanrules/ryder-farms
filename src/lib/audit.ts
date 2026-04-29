@@ -16,8 +16,8 @@ export async function logAdminAction(
       actor_email: user.email,
       details: details ?? null,
     })
-    if (error) console.error('[audit] insert error:', error.message, error.code)
+    if (error && import.meta.env.DEV) console.error('[audit] insert error:', error.message, error.code)
   } catch (err) {
-    console.error('[audit] logAdminAction failed:', err)
+    if (import.meta.env.DEV) console.error('[audit] logAdminAction failed:', err)
   }
 }

@@ -11,7 +11,7 @@ export default function PendingApproval() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { navigate('/auth/login'); return }
       if (user.email === import.meta.env.VITE_ADMIN_EMAIL) { navigate('/admin'); return }
-      const { data } = await supabase.from('patients').select('*').eq('id', user.id).maybeSingle()
+      const { data } = await supabase.from('patients').select('approved, account_type, full_name').eq('id', user.id).maybeSingle()
       if (data) {
         if ((data as Patient).approved) {
           navigate((data as Patient).account_type === 'wholesale' ? '/wholesale' : '/menu')

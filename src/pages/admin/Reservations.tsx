@@ -17,7 +17,7 @@ export default function AdminReservations() {
     setLoading(true)
     const { data } = await supabase
       .from('reservations')
-      .select('*, product:products(*), patient:patients(*)')
+      .select('*, product:products(id, name, price, unit, category, quantity), patient:patients(id, full_name, email, certification_number, account_type)')
       .eq('status', status)
       .order('created_at', { ascending: true })
 

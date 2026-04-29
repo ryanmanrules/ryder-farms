@@ -16,7 +16,7 @@ export default function Navbar() {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
 
   async function loadPatient(userId: string) {
-    const { data } = await supabase.from('patients').select('*').eq('id', userId).maybeSingle()
+    const { data } = await supabase.from('patients').select('approved, account_type').eq('id', userId).maybeSingle()
     setPatient(data as Patient | null)
   }
 

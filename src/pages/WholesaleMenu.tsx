@@ -37,7 +37,9 @@ export default function WholesaleMenu() {
       }
 
       const { data, error } = await supabase
-        .from('products').select('*').eq('active', true).eq('availability', 'wholesale')
+        .from('products')
+        .select('id, name, category, strain, thc_pct, cbd_pct, unit, quantity, active, image_url')
+        .eq('active', true).eq('availability', 'wholesale')
         .order('category').order('name')
 
       if (error) setError('Unable to load products right now. Please try again.')
